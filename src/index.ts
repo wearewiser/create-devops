@@ -5,6 +5,7 @@ import { Transform } from 'stream';
 import { isBinaryFile } from 'isbinaryfile';
 import { Observable } from 'rxjs';
 import { filter, map, mergeMap } from 'rxjs/operators';
+import { parse } from 'ini';
 import {
   dirname,
   join,
@@ -24,6 +25,8 @@ import {
 import * as ora from 'ora';
 import * as handlebars from 'handlebars';
 
+const INI_VARS = "devops.ini"
+
 const sleep = (t: number): Promise<void> =>
   new Promise(
     resolve => setTimeout(resolve, t),
@@ -38,6 +41,8 @@ class Handlebars extends Transform {
       writableObjectMode: true,
     });
     this.props = props;
+    handlebars.registerHelper("open", () => "{{");
+    handlebars.registerHelper("close", () => "}}");
   }
 
   // tslint:disable-next-line: function-name
@@ -79,7 +84,7 @@ async function getVersion(project_dir: string, pkg_json_name = "package.json"): 
   );
 }
 
-async function precheckOnDir(dir: string, skip_dir_check: boolean): Promise<void> {
+async function precheckOnDir(dir: string): Promise<void> {
   if (await isPathExist(dir)) {
     // is not a directory
     if (!(await isPathDir(dir))) {
@@ -89,9 +94,9 @@ async function precheckOnDir(dir: string, skip_dir_check: boolean): Promise<void
     if (!(await isPathAccess(dir))) {
       throw new Error(`Specified path "${dir}" is not accessible`);
     }
-    // is not empty
-    if (!skip_dir_check && !(await isDirEmpty(dir))) {
-      throw new Error(`Specified path "${dir}" is not empty`);
+    // no ini
+    if (!(await isFileExist(INI_VARS))) {
+      throw new Error(`Can not open ini file for variables at "${INI_VARS}"`);
     }
   }
 }
@@ -111,6 +116,24 @@ async function isPathExist(path: string): Promise<boolean> {
   return new Promise<boolean>(
     (resolve, reject) => {
       lstat(path, (err: any) => {
+        if (err) {
+          if (err.code !== 'ENOENT') {
+            reject(err);
+            return;
+          }
+          resolve(false);
+          return;
+        }
+        resolve(true);
+      });
+    },
+  );
+}
+
+async function isFileExist(path: string): Promise<boolean> {
+  return new Promise<boolean>(
+    (resolve, reject) => {
+      readFile(path, (err: any) => {
         if (err) {
           if (err.code !== 'ENOENT') {
             reject(err);
@@ -156,15 +179,15 @@ async function isPathDir(path: string): Promise<boolean> {
   );
 }
 
-async function isDirEmpty(dir: string): Promise<boolean> {
-  return new Promise<boolean>(
+async function readIni(): Promise<{ [key: string]: any; }> {
+  return new Promise<{ [key: string]: any; }>(
     (resolve, reject) => {
-      readdir(dir, (err: any, files: string[]) => {
+      readFile(INI_VARS, (err: any, data: Buffer) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(files.length < 1);
+        resolve(parse(data.toString()));
       });
     },
   );
@@ -281,19 +304,15 @@ async function fileRenameOverride(copy_files: FileOverride[]): Promise<void> {
   )
 }
 
-async function copyFiles(source_dir: string, target_dir: string, params: any): Promise<void> {
+async function copyFiles(source_dir: string, target_dir: string, params = {}): Promise<void> {
   const source_files = await listFiles(source_dir);
   await Promise.all(
     source_files.map(
       source_file => new Promise<void>(
         async (resolve, reject) => {
           const SKIP_COPY: string[] = [ ];
-          const SKIP_RENDER: string[] = [
-            ".ts",
-            ".tsx",
-          ];
+          const SKIP_RENDER: string[] = [ ];
           if(testPathExtension(source_file, SKIP_COPY)) {
-            console.log(`oh fuck: ${source_file}`);
             resolve();
           } 
           const target_file = join(target_dir, source_file.replace(source_dir, ''));
@@ -328,34 +347,6 @@ async function copyFiles(source_dir: string, target_dir: string, params: any): P
         },
       ),
     ),
-  );
-}
-
-async function gitInit(target_dir: string): Promise<string> {
-  return new Promise(
-    (resolve, reject) => {
-      exec(`git -C "${target_dir}" init`, (err, stdout) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(stdout.toString().trim());
-      });
-    },
-  );
-}
-
-async function npmInstall(target_dir: string): Promise<string> {
-  return new Promise(
-    (resolve, reject) => {
-      exec(`cd ${target_dir} && npm install`, (err, stdout) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(stdout.toString().trim());
-      });
-    },
   );
 }
 
@@ -395,7 +386,7 @@ async function gitCommit(target_dir: string, message: string): Promise<string> {
 
   console.log();
   console.log('-------------------------------------------------------');
-  console.log('Welcome to Wiser\'s react component pkg generator');
+  console.log('Welcome to Wiser\'s DevOps tooling generator');
   console.log('-------------------------------------------------------');
   console.log();
 
@@ -403,46 +394,40 @@ async function gitCommit(target_dir: string, message: string): Promise<string> {
     throw new Error('Cannot find own directory - process.mainModule missing');
   }
 
-  const PACKAGE_TEMPLATE="react-lib";
-  const pkg_install_dir = join(process.mainModule.filename, '..', '..');
-  const source_dir = join(dirname(dirname(process.mainModule.filename)), 'packages', PACKAGE_TEMPLATE);
-  const pkg_name = await getPackageName(pkg_install_dir);
-  const version = await getVersion(pkg_install_dir);
-  const exe = `npm init ${pkg_name.replace("create-", "")}@${version}`;
-
   try {
+
+    const pkg_install_dir = join(process.mainModule.filename, '..', '..');
+    const pkg_name = await getPackageName(pkg_install_dir);
+    const version = await getVersion(pkg_install_dir);
+    const exe = `npm init ${pkg_name.replace("create-", "")}@${version}`;
+
     const program = new Command();
     program
       .version(version, '--version')
       .name(exe)
-      .usage('{<dir> | (-d|--dir) <directory>} -- [options...]')
+      .usage('{[site|svc|lib] | (-t|--type) [site|svc|lib]} -- [options...]')
       .description('Get started building react libraries.')
-      .argument('[dir]', 'Project directory')
-      .option('-d, --dir <string>', 'Project directory')
-      .option('-o, --org <string>', 'Organization scope')
+      .argument('[type]', 'site|svc|lib')
       .option('--skip-status-check', 'Skip checking git status in CWD')
-      .option('--skip-dir-check', 'Skip checking if project dir is empty')
-      .option('--skip-npm', 'Skip installing dependencies')
       .option('--skip-git', 'Skip making first commit');
     program.showHelpAfterError();
     program.parse();
     const options = program.opts();
-    const dir = program.args[0] || options.dir;
-    const name = dir;
-    const org = options.org;
+    const type = program.args[0] || options.type;
+    const dir = "./";
     const skip_status_check = options.skipStatusCheck;
-    const skip_dir_check = options.skipDirCheck;
-    const skip_npm = options.skipNpm;
     const skip_git = options.skipGit;
-    const pkg = org ? `@${org}/${name}` : name;
-    if (!dir) {
+
+    const source_dir = join(dirname(dirname(process.mainModule.filename)), 'packages', type);
+
+    if (!type || ! (await isPathDir(source_dir))) {
       program.help();
     }
     const log_dir_precheck = ora('Perfoming system precheck on directory');
     try {
       log_dir_precheck.start();
       await Promise.all([
-        precheckOnDir(dir, skip_dir_check),
+        precheckOnDir(dir),
         sleep(1000),
       ]);
       log_dir_precheck.succeed();
@@ -477,8 +462,9 @@ async function gitCommit(target_dir: string, message: string): Promise<string> {
     const log_copy_files = ora('Setting up project files');
     try {
       log_copy_files.start();
+      const ini = await readIni();
       await Promise.all([
-        copyFiles(source_dir, dir, { exe, version, name, pkg, org }),
+        copyFiles(source_dir, dir, ini),
         sleep(1000),
       ]);
       const OVERRIDE_FILENAMES: FileOverride[] = [
@@ -502,39 +488,13 @@ async function gitCommit(target_dir: string, message: string): Promise<string> {
       log_copy_files.fail();
       throw e;
     }
-    if (!skip_npm) {
-      const log_dependencies = ora('Installing dependencies');
-      try {
-        log_dependencies.start();
-        await Promise.all([
-          npmInstall(dir),
-          sleep(1000),
-        ]);
-        log_dependencies.succeed();
-      } catch (e) {
-        log_dependencies.fail();
-        throw e;
-      }
-    }
     if (!skip_git) {
-      const log_git_init = ora('Initializing git repository');
-      try {
-        log_git_init.start();
-        await Promise.all([
-          gitInit(dir),
-          sleep(1000),
-        ]);
-        log_git_init.succeed();
-      } catch (e) {
-        log_git_init.fail();
-        throw e;
-      }
-      const log_git_commit = ora('Making first commit');
+      const log_git_commit = ora('Making commit');
       try {
         log_git_commit.start();
         await gitAddAll(dir);
         await Promise.all([
-          gitCommit(dir, `Project ${dir} initialized`),
+          gitCommit(dir, `Setup DevOps tooling`),
           sleep(1000),
         ]);
         log_git_commit.succeed();
