@@ -31,7 +31,14 @@ Options:
 
 ## devops.ini
 
-In order to initialize parameters, you will need to include a devops.ini file at runtime.
+In order to initialize parameters, you will need to include a `devops.ini` file at runtime in your target project.
+
+### Lib .ini Template
+
+```ini
+# runtime
+NODE_VERSION=18.4
+```
 
 ### Site and SVC .ini Template
 
