@@ -69,7 +69,8 @@ workflows:
             - "Build"
           filters:
             branches:
-              only: release/*
+              only:
+                - /release\/.*/
       - master:
           name: "Update Master"
           skip: false
