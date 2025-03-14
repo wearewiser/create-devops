@@ -1,6 +1,6 @@
 {
   "name": "@wiser/create-devops",
-  "version": "0.0.13",
+  "version": "0.0.0",
   "description": "",
   "main": "./dist/create-devops",
   "bin": "./dist/create-devops",
@@ -13,8 +13,8 @@
     "test": "node_modules/mocha/bin/mocha src/*.spec.ts  src/**/*.spec.ts  src/**/**/*.spec.ts src/**/**/**/*.spec.ts src/**/**/**/**/*.spec.ts --recursive true --require node_modules/ts-node/register --exit",
     "test:watch": "npm run test -- --watch-extensions ts,spec.ts --watch",
     "coverage": "node node_modules/nyc/bin/nyc.js --exclude '**/*.spec.ts' --exclude 'src/config.ts' --extension .ts --reporter lcov --reporter text npm run test",
-    "start": "./node_modules/.bin/nodemon -q --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --delay 250ms --exec 'npm run build && node create-react-lib' src/index.ts",
-    "build": "npm run clean && node ./node_modules/.bin/webpack --mode production && chmod +x ./dist/create-react-lib",
+    "start": "./node_modules/.bin/nodemon -q --watch 'src/**/*.ts' --ignore 'src/**/*.spec.ts' --delay 250ms --exec 'npm run build && node create-devops' src/index.ts",
+    "build": "npm run clean && node ./node_modules/.bin/webpack --mode production && chmod +x ./dist/create-devops",
     "tsc": "npm run clean && node node_modules/typescript/bin/tsc --p tsconfig.json",
     "clean": "rm -rf dist",
     "lint": "node node_modules/tslint/bin/tslint -c tslint.json \"src/**/*.ts\"",
@@ -33,6 +33,7 @@
   "dependencies": {
     "commander": "^8.0.0",
     "handlebars": "^4.5.3",
+    "ini": "^5.0.0",
     "isbinaryfile": "^4.0.10",
     "ora": "^5.4.1",
     "reflect-metadata": "^0.1.13",
@@ -40,10 +41,14 @@
     "tsnode-di": "0.0.3"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
     "@types/chai": "^4.0.4",
     "@types/get-installed-path": "^4.0.0",
+    "@types/ini": "^4.1.1",
     "@types/mocha": "^2.2.43",
     "@types/node": "^10.17.60",
+    "babel-loader": "^8.2.5",
     "chai": "^4.1.2",
     "mocha": "^4.0.1",
     "nodemon": "^1.12.1",
