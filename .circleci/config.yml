@@ -66,13 +66,13 @@ workflows:
           skip: false
           context: "global"
           requires:
-            - "Release/1"
+            - "Build"
       - slack_msg:
           name: "Slack Notification"
           skip: false
           context: "global"
           requires:
-            - Release/1
+            - Build
 # END DEVOPS CONFIG
 jobs:
   checkout:
