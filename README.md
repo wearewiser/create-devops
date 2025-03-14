@@ -36,40 +36,38 @@ In order to initialize parameters, you will need to include a `devops.ini` file 
 ### Lib .ini Template
 
 ```ini
-# runtime
 NODE_VERSION=18.4
 ```
 
 ### Site and SVC .ini Template
 
 ```ini
-# runtime
 NODE_VERSION=18.4
-# cluster info
+[cluster]
 GITOPS_ORG="wearewiser"
 GITOPS_REPO="wiser-cluster"
-# alpha
-GOOGLE_PROJECT_ID_ALPHA="wiser-mainframe"
-GOOGLE_COMPUTE_ZONE_ALPHA="europe-west1"
-GOOGLE_CLUSTER_ALPHA="wiser-cluster"
-DEPLOYMENT_ALPHA="hello"
-CONTAINER_ALPHA="hello"
-NAMESPACE_ALPHA="devl"
-GITOPS_ALPHA_DEPLOYMENT_PATH="apps/devl/hello/site-deployment.yaml"
-# beta
-GOOGLE_PROJECT_ID_BETA="wiser-mainframe"
-GOOGLE_COMPUTE_ZONE_BETA="europe-west1"
-GOOGLE_CLUSTER_BETA="wiser-cluster"
-DEPLOYMENT_BETA="hello"
-CONTAINER_BETA="hello"
-NAMESPACE_BETA="test"
-GITOPS_BETA_DEPLOYMENT_PATH="apps/test/hello/site-deployment.yaml"
-# stable
-GOOGLE_PROJECT_ID_STABLE="wiser-mainframe"
-GOOGLE_COMPUTE_ZONE_STABLE="europe-west1"
-GOOGLE_CLUSTER_STABLE="wiser-cluster"
-DEPLOYMENT_STABLE="hello"
-CONTAINER_STABLE="hello"
-NAMESPACE_STABLE="prod"
-GITOPS_STABLE_DEPLOYMENT_PATH="apps/prod/hello/site-deployment.yaml"
+[alpha]
+GOOGLE_PROJECT_ID="wiser-mainframe"
+GOOGLE_COMPUTE_ZONE="europe-west1"
+GOOGLE_CLUSTER="wiser-cluster"
+DEPLOYMENT="hello"
+CONTAINER="hello"
+NAMESPACE="devl"
+GITOPS_DEPLOYMENT_PATH="apps/devl/hello/site-deployment.yaml"
+[beta]
+GOOGLE_PROJECT_ID="wiser-mainframe"
+GOOGLE_COMPUTE_ZONE="europe-west1"
+GOOGLE_CLUSTER="wiser-cluster"
+DEPLOYMENT="hello"
+CONTAINER="hello"
+NAMESPACE="test"
+GITOPS_DEPLOYMENT_PATH="apps/test/hello/site-deployment.yaml"
+[stable]
+GOOGLE_PROJECT_ID="wiser-mainframe"
+GOOGLE_COMPUTE_ZONE="europe-west1"
+GOOGLE_CLUSTER="wiser-cluster"
+DEPLOYMENT="hello"
+CONTAINER="hello"
+NAMESPACE="prod"
+GITOPS_DEPLOYMENT_PATH="apps/prod/hello/site-deployment.yaml"
 ```
