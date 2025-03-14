@@ -1,9 +1,10 @@
 const webpack = require('webpack');
+const path = require('path');
 
 module.exports = {
   entry: './src/index.ts',
   output: {
-    filename: "create-react-lib",
+    filename: "create-devops",
     libraryTarget: 'this'
   },
   target: 'node',
@@ -12,7 +13,19 @@ module.exports = {
       {
         test: /\.tsx?$/,
         loader: ['ts-loader']
-      }
+      },
+      {
+        test: /\.js$/,
+        include: [
+          path.resolve(__dirname, 'node_modules/ini')
+        ],
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
+      },
     ]
   },
   plugins: [
