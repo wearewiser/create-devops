@@ -411,11 +411,11 @@ jobs:
           command: |
             source .circleci/env
             if [[ "$TAG" = "ALPHA" ]] ; then
-
+              echo "Publishing alpha library"
             elif [[ "$TAG" = "BETA" ]] ; then
-
+              echo "Publishing beta library"
             elif [[ "$TAG" =~ "STABLE" ]] ; then
-
+              echo "Publishing production library"
             else
               echo "Unknown tag $TAG"
               exit 1
