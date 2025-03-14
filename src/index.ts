@@ -416,14 +416,14 @@ async function gitCommit(target_dir: string, message: string): Promise<string> {
     program.showHelpAfterError();
     program.parse();
     const options = program.opts();
-    const type = program.args[0] || options.type;
+    const type = program.args[0] || options.type || '';
     const dir = './';
     const skip_status_check = options.skipStatusCheck;
     const skip_git = options.skipGit;
 
     const source_dir = join(dirname(dirname(process.mainModule.filename)), 'packages', type);
 
-    if (!type || ! (await isPathDir(source_dir))) {
+    if (!type || ! (await isPathExist(source_dir))) {
       program.help();
     }
     const log_dir_precheck = ora('Perfoming system precheck on directory');
