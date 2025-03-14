@@ -61,18 +61,27 @@ workflows:
           BUILD_ALPHA: "npm run build"
           BUILD_BETA: "npm run build"
           BUILD_STABLE: "npm run build"
+      - publish:
+          name: "Publish"
+          skip: false
+          context: "publisher"
+          requires:
+            - "Build"
+          filters:
+            branches:
+              only: release/*
       - master:
           name: "Update Master"
           skip: false
           context: "global"
           requires:
-            - "Build"
+            - Publish
       - slack_msg:
           name: "Slack Notification"
           skip: false
           context: "global"
           requires:
-            - Build
+            - Publish
 # END DEVOPS CONFIG
 jobs:
   checkout:
@@ -366,6 +375,57 @@ jobs:
           root: ~/project
           paths:
             - ./
+  publish:
+    docker:
+      - image: cimg/node:18.4
+    parameters:
+      skip:
+        description: "Skip Publish"
+        default: false
+        type: boolean
+    working_directory: ~/project
+    steps:
+      - when:
+          condition: <<parameters.skip>>
+          steps:
+            - run:
+                name: Skip
+                command: circleci-agent step halt
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Release Branch Check
+          command: |
+            export RELEASE="release/.*"
+            if [[ "$(git branch | grep \* | cut -d ' ' -f2)" =~ $RELEASE ]] ; then
+              echo "Release branch - checking out last tag $(git describe --abbrev=0)" ;
+              git checkout $(git describe --abbrev=0)
+            else
+              echo "Not release branch - moving forward." ;
+            fi
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: "Setup Variables"
+          command: |
+            source .circleci/env
+            if [[ "$TAG" = "ALPHA" ]] ; then
+
+            elif [[ "$TAG" = "BETA" ]] ; then
+
+            elif [[ "$TAG" =~ "STABLE" ]] ; then
+
+            else
+              echo "Unknown tag $TAG"
+              exit 1
+            fi
+      - run:
+          name: Set up NPM Authentication
+          command: |
+            npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+      - run:
+          name: Publish to NPM
+          command: npm publish
   master:
     docker:
       - image: cimg/node:18.4
@@ -435,7 +495,7 @@ jobs:
                 command: circleci-agent step halt
       - checkout
       - slack/notify:
-          message: "Release ${CIRCLE_PROJECT_REPONAME}@$(git describe --abbrev=0) deployed"
+          message: "Release ${CIRCLE_PROJECT_REPONAME}@$(git describe --abbrev=0) published"
           color: "#5031aa"
           webhook: "${SLACK_HOOK}"
           include_visit_job_action: true
