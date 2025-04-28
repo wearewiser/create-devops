@@ -74,7 +74,7 @@ workflows:
       - master:
           name: "Update Master"
           skip: false
-          context: "global"
+          context: "wiser-mainframe"
           requires:
             - Publish
       - slack_msg:
@@ -477,8 +477,8 @@ jobs:
       - run:
           name: Push Master
           command: |
-            echo "$(echo $CIRCLE_REPOSITORY_URL | sed s/:/\\//g | sed s/git@/https\:\\/\\/${GITHUB_TOKEN}@/g)"
-            git push "$(echo $CIRCLE_REPOSITORY_URL | sed s/:/\\//g | sed s/git@/https\:\\/\\/${GITHUB_TOKEN}@/g)" master
+            echo "$(echo $CIRCLE_REPOSITORY_URL | sed s/:/\\//g | sed s/git@/https\:\\/\\/${GITOPS_USER}:${GITOPS_PASS}@/g)"
+            git push "$(echo $CIRCLE_REPOSITORY_URL | sed s/:/\\//g | sed s/git@/https\:\\/\\/${GITOPS_USER}:${GITOPS_PASS}@/g)" master
   slack_msg:
     docker:
       - image: cimg/node:18.4
