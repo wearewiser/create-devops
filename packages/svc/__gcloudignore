@@ -12,7 +12,9 @@
 # below:
 .git
 .gitignore
+src/
 #!include:.gitignore
-!.next/
-!out/
-!.env
+!lib/
+!dist/
+src/
+!.GOOGLE_APPLICATION_CREDENTIALS.json
