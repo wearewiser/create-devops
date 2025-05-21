@@ -1,6 +1,6 @@
 {
   "name": "@wiser/create-devops",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "",
   "main": "./dist/create-devops",
   "bin": "./dist/create-devops",
